@@ -2,6 +2,58 @@
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "effect-log"
+version = "0.1.0b1"
+description = "Functional structured logging with composable effects"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Effect-Py Organization", email = "maintainers@effect-py.org"}
+]
+maintainers = [
+    {name = "Effect-Py Organization", email = "maintainers@effect-py.org"}
+]
+keywords = ["logging", "functional", "structured", "effect", "immutable"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Logging",
+    "Typing :: Typed",
+]
+requires-python = ">=3.8"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=22.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0",
+]
+web = [
+    "flask>=2.0",
+    "fastapi>=0.68",
+    "django>=3.2",
+]
+
+[project.urls]
+Homepage = "https://github.com/effect-py/log"
+Repository = "https://github.com/effect-py/log"
+Documentation = "https://github.com/effect-py/log/blob/main/README.md"
+Issues = "https://github.com/effect-py/log/issues"
+Changelog = "https://github.com/effect-py/log/blob/main/CHANGELOG.md"
+
 [tool.black]
 line-length = 88
 target-version = ['py38']
