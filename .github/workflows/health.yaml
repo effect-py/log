@@ -1,0 +1,171 @@
+name: Repository Health
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'  # Weekly on Monday
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+
+    - name: Check repository health
+      run: |
+        echo "## Repository Health Report" > health_report.md
+        echo "Generated: $(date)" >> health_report.md
+        echo "" >> health_report.md
+        
+        # Check test coverage
+        echo "### Test Coverage" >> health_report.md
+        pytest --cov=effect_log --cov-report=term-missing | tail -n 1 >> health_report.md
+        echo "" >> health_report.md
+        
+        # Check code quality
+        echo "### Code Quality" >> health_report.md
+        echo "- Black formatting: $(black --check . && echo '✓ Passed' || echo '✗ Failed')" >> health_report.md
+        echo "- Ruff linting: $(ruff check . && echo '✓ Passed' || echo '✗ Failed')" >> health_report.md
+        echo "- MyPy type checking: $(mypy effect_log/ && echo '✓ Passed' || echo '✗ Failed')" >> health_report.md
+        echo "" >> health_report.md
+        
+        # Check recent activity
+        echo "### Recent Activity (Last 30 Days)" >> health_report.md
+        echo "- Commits: $(git log --since='30 days ago' --oneline | wc -l)" >> health_report.md
+        echo "- Contributors: $(git log --since='30 days ago' --format='%an' | sort | uniq | wc -l)" >> health_report.md
+        echo "" >> health_report.md
+        
+        # Check dependencies
+        echo "### Dependencies" >> health_report.md
+        echo "- Total dependencies: $(pip freeze | wc -l)" >> health_report.md
+        echo "- Outdated packages: $(pip list --outdated | wc -l)" >> health_report.md
+        echo "" >> health_report.md
+        
+        # Check file sizes
+        echo "### Package Size" >> health_report.md
+        python -m build > /dev/null 2>&1
+        echo "- Source distribution: $(ls -lh dist/*.tar.gz | awk '{print $5}' | head -1)" >> health_report.md
+        echo "- Wheel: $(ls -lh dist/*.whl | awk '{print $5}' | head -1)" >> health_report.md
+        
+        cat health_report.md
+
+    - name: Upload health report
+      uses: actions/upload-artifact@v4
+      with:
+        name: health-report
+        path: health_report.md
+
+  dependency-audit:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+        pip install pip-audit
+
+    - name: Audit dependencies
+      run: |
+        pip-audit --format=json --output=audit.json || true
+        pip-audit --format=markdown --output=audit.md || true
+
+    - name: Upload audit results
+      uses: actions/upload-artifact@v4
+      with:
+        name: dependency-audit
+        path: |
+          audit.json
+          audit.md
+
+  performance-benchmark:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+        pip install pytest-benchmark
+
+    - name: Run performance benchmarks
+      run: |
+        # Create basic benchmark test
+        cat > benchmark_test.py << 'EOF'
+        import pytest
+        from effect_log import Logger, with_context, with_span
+        from effect_log.writers import ConsoleWriter
+        from io import StringIO
+
+        def test_logger_creation_benchmark(benchmark):
+            def create_logger():
+                return Logger()
+            
+            result = benchmark(create_logger)
+            assert result is not None
+
+        def test_context_addition_benchmark(benchmark):
+            logger = Logger()
+            
+            def add_context():
+                return logger.with_context(service="test", version="1.0")
+            
+            result = benchmark(add_context)
+            assert result is not None
+
+        def test_logging_benchmark(benchmark):
+            stream = StringIO()
+            logger = Logger(writer=ConsoleWriter(stream=stream))
+            
+            def log_message():
+                logger.info("Test message", user_id="123", action="test")
+            
+            benchmark(log_message)
+
+        def test_pipe_benchmark(benchmark):
+            logger = Logger()
+            
+            def pipe_operations():
+                return logger.pipe(
+                    with_context(service="test"),
+                    with_span("span-123")
+                )
+            
+            result = benchmark(pipe_operations)
+            assert result is not None
+        EOF
+        
+        pytest benchmark_test.py --benchmark-json=benchmark.json || true
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark-results
+        path: benchmark.json

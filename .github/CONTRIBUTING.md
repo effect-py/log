@@ -10,6 +10,7 @@
 - [Making Changes](#making-changes)
 - [Testing](#testing)
 - [Code Style](#code-style)
+- [Documentation Contributions](#documentation-contributions)
 - [Submitting Changes](#submitting-changes)
 - [Release Process](#release-process)
 
@@ -196,6 +197,70 @@ black --check .
 ### Linting
 
 We use [Ruff](https://github.com/charliermarsh/ruff) for linting:
+
+```bash
+# Lint all code
+ruff check .
+
+# Fix auto-fixable issues
+ruff check --fix .
+```
+
+### Type Checking
+
+We use [mypy](https://github.com/python/mypy) for type checking:
+
+```bash
+# Check types
+mypy .
+
+# Check types with strict mode
+mypy --strict effect_log/
+```
+
+## Documentation Contributions
+
+### Documentation Structure
+
+Documentation is organized as follows:
+- `README.md`: Main project documentation
+- `docs/README.md`: User guide and getting started
+- `docs/API.md`: Complete API reference
+- `docs/integrations.md`: Framework integration guides
+- `docs/best-practices.md`: Advanced usage and best practices
+- `docs/migration.md`: Migration from other libraries
+- `docs/troubleshooting.md`: Common issues and solutions
+
+### Writing Documentation
+
+1. **Style Guidelines**:
+   - Use clear, concise language
+   - Include working code examples
+   - Use consistent terminology
+   - Structure content with proper headings
+
+2. **Code Examples**:
+   - All examples must be tested and working
+   - Include necessary imports
+   - Use realistic scenarios
+   - Show expected output when relevant
+
+3. **Testing Documentation**:
+   ```bash
+   # Test code examples in documentation
+   python -m doctest docs/README.md
+   
+   # Check markdown links
+   markdown-link-check docs/*.md
+   ```
+
+### Documentation Workflow
+
+1. **Fork and clone** the repository
+2. **Create a branch**: `git checkout -b docs/your-improvement`
+3. **Make changes** to documentation files
+4. **Test examples** to ensure they work
+5. **Submit PR** with clear description of changes
 
 ```bash
 # Run linter

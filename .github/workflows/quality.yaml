@@ -1,0 +1,233 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-quality-${{ hashFiles('**/requirements-dev.txt', '**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-quality-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+
+    - name: Run comprehensive tests with coverage
+      run: |
+        pytest --cov=effect_log --cov-report=xml --cov-report=html --cov-report=term-missing -v --cov-fail-under=85
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: true
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Upload HTML coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-html
+        path: htmlcov/
+
+    - name: Check code formatting
+      run: |
+        black --check --diff .
+
+    - name: Run ruff with all rules
+      run: |
+        ruff check . --output-format=github
+
+    - name: Run mypy with strict mode
+      run: |
+        mypy --strict effect_log/ --show-error-codes
+
+    - name: Check for unused imports
+      run: |
+        pip install unimport
+        unimport --check --diff .
+
+    - name: Check docstring coverage
+      run: |
+        pip install docstring-coverage
+        docstring-coverage effect_log/ --fail-under=80
+
+  performance:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-perf-${{ hashFiles('**/requirements-dev.txt', '**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-perf-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+        pip install pytest-benchmark
+
+    - name: Run performance benchmarks
+      run: |
+        pytest tests/ -k "benchmark" --benchmark-json=benchmark.json || true
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: benchmark-results
+        path: benchmark.json
+
+  compatibility:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements-dev.txt', '**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+
+    - name: Test import compatibility
+      run: |
+        python -c "
+        import effect_log
+        from effect_log import Logger, LogLevel, with_context, with_span
+        from effect_log.writers import ConsoleWriter, FileWriter, JSONConsoleWriter
+        from effect_log.middleware import HttpLoggerMiddleware
+        print('All imports successful for Python ${{ matrix.python-version }}')
+        "
+
+    - name: Test basic functionality
+      run: |
+        python -c "
+        from effect_log import Logger, with_context, with_span
+        logger = Logger().pipe(with_context(test='compatibility'), with_span('test-span'))
+        logger.info('Compatibility test passed', python_version='${{ matrix.python-version }}')
+        "
+
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+        pip install pip-audit safety
+
+    - name: Check for security vulnerabilities with pip-audit
+      run: |
+        pip-audit --format=json --output=audit.json || true
+        pip-audit --format=cyclonedx-json --output=sbom.json || true
+
+    - name: Check for known security issues with safety
+      run: |
+        safety check --json --output=safety.json || true
+
+    - name: Upload security reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          audit.json
+          sbom.json
+          safety.json
+
+  package-validation:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine check-manifest
+
+    - name: Check manifest
+      run: |
+        check-manifest
+
+    - name: Build package
+      run: |
+        python -m build
+
+    - name: Check package metadata
+      run: |
+        twine check dist/*
+
+    - name: Check package size
+      run: |
+        ls -la dist/
+        echo "Package sizes:"
+        du -h dist/*
+
+    - name: Test package installation
+      run: |
+        pip install dist/*.whl
+        python -c "import effect_log; print('Package installation successful')"

@@ -1,0 +1,17 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 GitHub Discussions
+    url: https://github.com/effect-py/log/discussions
+    about: Ask questions and discuss effect-log with the community
+  - name: 📚 Documentation
+    url: https://github.com/effect-py/log#readme
+    about: Read the documentation and examples
+  - name: 🔒 Security Contact
+    url: mailto:security@effect-py.org
+    about: Report security vulnerabilities privately
+  - name: 🌐 Effect-Py Organization
+    url: https://github.com/effect-py
+    about: Explore other projects in the effect-py ecosystem
+  - name: 📖 Contributing Guide
+    url: https://github.com/effect-py/log/blob/main/.github/CONTRIBUTING.md
+    about: Learn how to contribute to effect-log

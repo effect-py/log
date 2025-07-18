@@ -1,0 +1,340 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0, 1.0.0b1, 1.0.0rc1)'
+        required: true
+        type: string
+      pre_release:
+        description: 'Is this a pre-release?'
+        required: false
+        default: false
+        type: boolean
+      changelog:
+        description: 'Changelog entry (optional)'
+        required: false
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate-release:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      is_prerelease: ${{ steps.version.outputs.is_prerelease }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[dev]"
+        pip install build twine
+
+    - name: Validate version format
+      id: version
+      run: |
+        VERSION="${{ github.event.inputs.version }}"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        
+        # Check if version is a pre-release
+        if [[ "$VERSION" =~ (a|b|rc|dev) ]]; then
+          echo "is_prerelease=true" >> $GITHUB_OUTPUT
+        else
+          echo "is_prerelease=false" >> $GITHUB_OUTPUT
+        fi
+        
+        # Validate version format
+        python -c "
+        import re
+        import sys
+        version = '$VERSION'
+        # PEP 440 compliant version regex
+        pattern = r'^([1-9][0-9]*!)?(0|[1-9][0-9]*)(\.(0|[1-9][0-9]*))*((a|b|rc)(0|[1-9][0-9]*))?(\.post(0|[1-9][0-9]*))?(\.dev(0|[1-9][0-9]*))?$'
+        if not re.match(pattern, version):
+            print(f'Invalid version format: {version}')
+            sys.exit(1)
+        print(f'Valid version format: {version}')
+        "
+
+    - name: Check if version already exists
+      run: |
+        git fetch --tags
+        if git tag -l | grep -q "^v${{ steps.version.outputs.version }}$"; then
+          echo "Error: Version ${{ steps.version.outputs.version }} already exists!"
+          exit 1
+        fi
+
+    - name: Update version in pyproject.toml
+      run: |
+        sed -i 's/^version = .*/version = "${{ steps.version.outputs.version }}"/' pyproject.toml
+        git diff pyproject.toml
+
+    - name: Update version in __init__.py
+      run: |
+        sed -i 's/^__version__ = .*/__version__ = "${{ steps.version.outputs.version }}"/' effect_log/__init__.py
+        git diff effect_log/__init__.py
+
+    - name: Run full test suite
+      run: |
+        pytest -v --cov=effect_log --cov-fail-under=85
+
+    - name: Run security checks
+      run: |
+        pip install bandit safety
+        bandit -r effect_log/
+        safety check
+
+    - name: Build and validate package
+      run: |
+        python -m build
+        twine check dist/*
+        
+        # Test installation
+        pip install dist/*.whl
+        python -c "import effect_log; print(f'Package version: {effect_log.__version__}')"
+
+    - name: Upload version files
+      uses: actions/upload-artifact@v4
+      with:
+        name: version-files
+        path: |
+          pyproject.toml
+          effect_log/__init__.py
+
+  create-release:
+    needs: validate-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download version files
+      uses: actions/download-artifact@v4
+      with:
+        name: version-files
+        path: .
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+
+    - name: Update CHANGELOG.md
+      run: |
+        VERSION="${{ needs.validate-release.outputs.version }}"
+        DATE=$(date +%Y-%m-%d)
+        
+        # Create changelog entry
+        CHANGELOG_ENTRY="## [$VERSION] - $DATE"
+        if [[ -n "${{ github.event.inputs.changelog }}" ]]; then
+          CHANGELOG_ENTRY="$CHANGELOG_ENTRY\n\n${{ github.event.inputs.changelog }}"
+        else
+          CHANGELOG_ENTRY="$CHANGELOG_ENTRY\n\n### Added\n- Release version $VERSION"
+        fi
+        
+        # Insert at the top of CHANGELOG.md after the header
+        if [[ -f CHANGELOG.md ]]; then
+          # Insert after the first line (header)
+          sed -i "1a\\$CHANGELOG_ENTRY\n" CHANGELOG.md
+        else
+          # Create new changelog
+          echo -e "# Changelog\n\n$CHANGELOG_ENTRY" > CHANGELOG.md
+        fi
+
+    - name: Commit version changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add pyproject.toml effect_log/__init__.py CHANGELOG.md
+        git commit -m "chore: release version ${{ needs.validate-release.outputs.version }}"
+
+    - name: Create Git tag
+      run: |
+        git tag -a "v${{ needs.validate-release.outputs.version }}" -m "Release version ${{ needs.validate-release.outputs.version }}"
+
+    - name: Push changes and tags
+      run: |
+        git push origin main
+        git push origin "v${{ needs.validate-release.outputs.version }}"
+
+    - name: Build package
+      run: |
+        python -m build
+
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        VERSION="${{ needs.validate-release.outputs.version }}"
+        
+        # Generate release notes
+        cat > release_notes.md << EOF
+        # Release $VERSION
+        
+        ## What's New
+        
+        ${{ github.event.inputs.changelog }}
+        
+        ## Installation
+        
+        \`\`\`bash
+        pip install effect-log==$VERSION
+        \`\`\`
+        
+        ## Verification
+        
+        \`\`\`bash
+        pip install effect-log==$VERSION
+        python -c "import effect_log; print(effect_log.__version__)"
+        \`\`\`
+        
+        ## Full Changelog
+        
+        **Full Changelog**: https://github.com/effect-py/log/compare/v${{ needs.validate-release.outputs.version }}...v${{ needs.validate-release.outputs.version }}
+        EOF
+        
+        echo "release_notes<<EOF" >> $GITHUB_OUTPUT
+        cat release_notes.md >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v${{ needs.validate-release.outputs.version }}
+        name: "Release ${{ needs.validate-release.outputs.version }}"
+        body: ${{ steps.release_notes.outputs.release_notes }}
+        files: dist/*
+        prerelease: ${{ needs.validate-release.outputs.is_prerelease }}
+        generate_release_notes: true
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+  post-release:
+    needs: [validate-release, create-release]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests
+
+    - name: Verify PyPI publication
+      run: |
+        VERSION="${{ needs.validate-release.outputs.version }}"
+        
+        # Wait for PyPI to process the package
+        sleep 30
+        
+        # Check if package is available on PyPI
+        python -c "
+        import requests
+        import time
+        import sys
+        
+        version = '$VERSION'
+        max_attempts = 10
+        
+        for attempt in range(max_attempts):
+            try:
+                response = requests.get(f'https://pypi.org/pypi/effect-log/{version}/json')
+                if response.status_code == 200:
+                    print(f'Package version {version} is available on PyPI')
+                    break
+            except Exception as e:
+                print(f'Attempt {attempt + 1}: Error checking PyPI: {e}')
+            
+            if attempt < max_attempts - 1:
+                print(f'Waiting 30 seconds before retry...')
+                time.sleep(30)
+        else:
+            print(f'Package version {version} not found on PyPI after {max_attempts} attempts')
+            sys.exit(1)
+        "
+
+    - name: Test installation from PyPI
+      run: |
+        VERSION="${{ needs.validate-release.outputs.version }}"
+        
+        # Create a clean environment and test installation
+        python -m venv test_env
+        source test_env/bin/activate
+        
+        # Install from PyPI
+        pip install effect-log==$VERSION
+        
+        # Test basic functionality
+        python -c "
+        import effect_log
+        from effect_log import Logger, with_context, with_span
+        
+        logger = Logger().pipe(with_context(test='release'), with_span('test-span'))
+        logger.info('Release test successful', version='$VERSION')
+        print(f'Successfully installed and tested version {effect_log.__version__}')
+        "
+
+    - name: Create follow-up issues
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const version = '${{ needs.validate-release.outputs.version }}';
+          
+          // Create issue for documentation update
+          await github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: `Update documentation for release ${version}`,
+            body: `
+            ## Documentation Updates Needed
+            
+            - [ ] Update README.md with new version
+            - [ ] Update API documentation
+            - [ ] Update examples if needed
+            - [ ] Update migration guide if breaking changes
+            
+            Release: v${version}
+            `,
+            labels: ['documentation', 'release']
+          });
+          
+          // Create issue for performance monitoring
+          await github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: `Monitor release ${version} performance`,
+            body: `
+            ## Performance Monitoring
+            
+            - [ ] Monitor PyPI download stats
+            - [ ] Check for user-reported issues
+            - [ ] Monitor error tracking if applicable
+            - [ ] Review performance metrics
+            
+            Release: v${version}
+            `,
+            labels: ['monitoring', 'release']
+          });
