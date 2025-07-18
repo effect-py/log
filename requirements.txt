@@ -1,0 +1,1 @@
+# No runtime dependencies - this is a pure Python functional logging library
