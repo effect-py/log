@@ -1,7 +1,20 @@
 """Effect-log: Functional structured logging with composable effects."""
 
-from .logger import Logger, fork_logger, merge_loggers, with_context, with_min_level, with_span, with_writer
-from .middleware import DjangoMiddleware, FastAPIMiddleware, FlaskMiddleware, HttpLoggerMiddleware
+from .logger import (
+    Logger,
+    fork_logger,
+    merge_loggers,
+    with_context,
+    with_min_level,
+    with_span,
+    with_writer,
+)
+from .middleware import (
+    DjangoMiddleware,
+    FastAPIMiddleware,
+    FlaskMiddleware,
+    HttpLoggerMiddleware,
+)
 from .types import LogContext, LogEntry, LogLevel
 from .writers import (
     BufferedWriter,
