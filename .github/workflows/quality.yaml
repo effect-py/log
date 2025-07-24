@@ -42,7 +42,7 @@ jobs:
         pytest --cov=effect_log --cov-report=xml --cov-report=html --cov-report=term-missing -v --cov-fail-under=75
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       with:
         file: ./coverage.xml
         fail_ci_if_error: true
