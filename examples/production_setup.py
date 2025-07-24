@@ -100,12 +100,12 @@ def request_tracing_setup():
 
         # Create request logger with tracing
         request_logger = base_logger.pipe(
-            lambda l: l.with_context(
+            lambda logger: logger.with_context(
                 user_id=user_id,
                 operation=operation,
                 request_id=f"req-{uuid.uuid4().hex[:8]}",
             ),
-            lambda l: l.with_span(span_id, trace_id),
+            lambda logger: logger.with_span(span_id, trace_id),
         )
 
         request_logger.info("Request started")

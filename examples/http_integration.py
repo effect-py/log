@@ -91,7 +91,6 @@ def fastapi_example():
         import time
 
         from fastapi import FastAPI, HTTPException, Request
-        from fastapi.responses import JSONResponse
 
         app = FastAPI()
 
@@ -268,12 +267,16 @@ def structured_logging_example():
     def process_request(request):
         # Create request-specific logger
         request_logger = base_logger.pipe(
-            lambda l: l.with_context(
+            lambda logger: logger.with_context(
                 http_method=request.method,
                 http_path=request.path,
                 request_id=f"req-{hash(request) % 10000}",
             ),
-            lambda l: l.with_context(user_id=request.user_id) if request.user_id else l,
+            lambda logger: (
+                logger.with_context(user_id=request.user_id)
+                if request.user_id
+                else logger
+            ),
         )
 
         request_logger.info("Request started")

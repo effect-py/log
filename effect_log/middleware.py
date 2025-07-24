@@ -174,7 +174,7 @@ class FlaskMiddleware:
 
         @app.before_request
         def log_request() -> None:
-            from flask import g, request  # type: ignore
+            from flask import g, request
 
             result = self.middleware(request)
             g.logger = result["logger"]
@@ -183,7 +183,7 @@ class FlaskMiddleware:
 
         @app.after_request
         def log_response(response: Any) -> Any:
-            from flask import g  # type: ignore
+            from flask import g
 
             if hasattr(g, "logger") and hasattr(g, "start_time"):
                 duration = time.time() - g.start_time
