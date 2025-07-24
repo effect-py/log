@@ -68,7 +68,7 @@ class HttpLoggerMiddleware:
 
     def _log_request(self, logger: Logger, request: Any) -> None:
         """Log HTTP request."""
-        context = {}
+        context: dict[str, Any] = {}
 
         if self.include_headers:
             context["headers"] = self._get_headers(request)
