@@ -26,20 +26,20 @@ jobs:
       with:
         python-version: "3.11"
 
-    - name: Cache pip dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-security-${{ hashFiles('**/requirements-dev.txt', '**/pyproject.toml') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-security-
-
     - name: Install Poetry
       uses: snok/install-poetry@v1
       with:
         version: latest
         virtualenvs-create: true
         virtualenvs-in-project: true
+
+    - name: Cache Poetry dependencies
+      uses: actions/cache@v4
+      with:
+        path: .venv
+        key: ${{ runner.os }}-poetry-security-${{ hashFiles('**/poetry.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-poetry-security-
 
     - name: Install dependencies
       run: poetry install --with dev
