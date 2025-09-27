@@ -27,11 +27,12 @@ jobs:
         python-version: "3.11"
 
     - name: Install Poetry
-      uses: snok/install-poetry@v1
+      uses: snok/install-poetry@v2
       with:
         version: latest
         virtualenvs-create: true
         virtualenvs-in-project: true
+        virtualenvs-path: .venv
 
     - name: Cache Poetry dependencies
       uses: actions/cache@v4
@@ -82,11 +83,12 @@ jobs:
         python-version: "3.11"
 
     - name: Install Poetry
-      uses: snok/install-poetry@v1
+      uses: snok/install-poetry@v2
       with:
         version: latest
         virtualenvs-create: true
         virtualenvs-in-project: true
+        virtualenvs-path: .venv
 
     - name: Install dependencies
       run: poetry install --with dev
@@ -140,11 +142,12 @@ jobs:
         python-version: "3.11"
 
     - name: Install Poetry
-      uses: snok/install-poetry@v1
+      uses: snok/install-poetry@v2
       with:
         version: latest
         virtualenvs-create: true
         virtualenvs-in-project: true
+        virtualenvs-path: .venv
 
     - name: Install dependencies
       run: poetry install --with dev
@@ -185,11 +188,12 @@ jobs:
         python-version: "3.11"
 
     - name: Install Poetry
-      uses: snok/install-poetry@v1
+      uses: snok/install-poetry@v2
       with:
         version: latest
         virtualenvs-create: true
         virtualenvs-in-project: true
+        virtualenvs-path: .venv
 
     - name: Install dependencies
       run: poetry install --with dev
@@ -221,11 +225,12 @@ jobs:
         python-version: "3.11"
 
     - name: Install Poetry
-      uses: snok/install-poetry@v1
+      uses: snok/install-poetry@v2
       with:
         version: latest
         virtualenvs-create: true
         virtualenvs-in-project: true
+        virtualenvs-path: .venv
 
     - name: Install dependencies
       run: poetry install --with dev

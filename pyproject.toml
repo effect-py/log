@@ -39,6 +39,7 @@ Documentation = "https://github.com/effect-py/log/blob/main/README.md"
 packages = [{ include = "effect_log" }]
 
 [tool.poetry.dependencies]
+python = ">=3.11"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.0"
