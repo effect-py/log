@@ -19,10 +19,15 @@ jobs:
       with:
         python-version: "3.11"
 
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: latest
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e ".[dev]"
+      run: poetry install --with dev
 
     - name: Check repository health
       run: |
@@ -32,14 +37,14 @@ jobs:
         
         # Check test coverage
         echo "### Test Coverage" >> health_report.md
-        pytest --cov=effect_log --cov-report=term-missing | tail -n 1 >> health_report.md
+        poetry run pytest --cov=effect_log --cov-report=term-missing | tail -n 1 >> health_report.md
         echo "" >> health_report.md
         
         # Check code quality
         echo "### Code Quality" >> health_report.md
-        echo "- Black formatting: $(black --check . && echo '✓ Passed' || echo '✗ Failed')" >> health_report.md
-        echo "- Ruff linting: $(ruff check . && echo '✓ Passed' || echo '✗ Failed')" >> health_report.md
-        echo "- MyPy type checking: $(mypy effect_log/ && echo '✓ Passed' || echo '✗ Failed')" >> health_report.md
+        echo "- Ruff formatting: $(poetry run ruff format --check . && echo '✓ Passed' || echo '✗ Failed')" >> health_report.md
+        echo "- Ruff linting: $(poetry run ruff check . && echo '✓ Passed' || echo '✗ Failed')" >> health_report.md
+        echo "- MyPy type checking: $(poetry run mypy effect_log/ && echo '✓ Passed' || echo '✗ Failed')" >> health_report.md
         echo "" >> health_report.md
         
         # Check recent activity
@@ -56,7 +61,7 @@ jobs:
         
         # Check file sizes
         echo "### Package Size" >> health_report.md
-        python -m build > /dev/null 2>&1
+        poetry build > /dev/null 2>&1
         echo "- Source distribution: $(ls -lh dist/*.tar.gz | awk '{print $5}' | head -1)" >> health_report.md
         echo "- Wheel: $(ls -lh dist/*.whl | awk '{print $5}' | head -1)" >> health_report.md
         
@@ -79,11 +84,16 @@ jobs:
       with:
         python-version: "3.11"
 
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: latest
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e ".[dev]"
-        pip install pip-audit
+      run: poetry install --with dev
+        poetry add pip-audit --group dev
 
     - name: Audit dependencies
       run: |
@@ -109,11 +119,16 @@ jobs:
       with:
         python-version: "3.11"
 
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: latest
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e ".[dev]"
-        pip install pytest-benchmark
+      run: poetry install --with dev
+        poetry add pytest-benchmark --group dev
 
     - name: Run performance benchmarks
       run: |
