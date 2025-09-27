@@ -1,4 +1,4 @@
-.PHONY: install check-lint format typecheck test coverage clean fix-lint actions-list actions-test actions-lint actions-code-quality actions-compatibility actions-performance actions-type-check
+.PHONY: install check-lint format typecheck test coverage clean fix-lint actions-list actions-ci actions-security actions-publish actions-release actions-all
 
 install:
 	poetry install
@@ -31,11 +31,15 @@ actions-list:
 	@echo "Available GitHub Actions:"
 	@echo "  ci: Main CI pipeline (lint, test, type-check)"
 	@echo "  security: Security vulnerability scanning"
+	@echo "  publish: Publish to PyPI"
+	@echo "  release: Create release"
 	@echo ""
 	@echo "Usage:"
 	@echo "  make actions-ci       # Test CI workflow"
 	@echo "  make actions-security # Test security workflow"
-	@echo "  make actions-all      # Test all workflows"
+	@echo "  make actions-publish  # Test publish workflow"
+	@echo "  make actions-release  # Test release workflow"
+	@echo "  make actions-all      # Test main workflows"
 
 actions-ci:
 	@echo "Testing CI workflow..."
@@ -45,5 +49,13 @@ actions-security:
 	@echo "Testing security workflow..."
 	act workflow_dispatch -W .github/workflows/security.yaml --container-architecture linux/amd64 --secret-file .secrets
 
+actions-publish:
+	@echo "Testing publish workflow..."
+	act workflow_dispatch -W .github/workflows/publish.yaml --container-architecture linux/amd64 --secret-file .secrets
+
+actions-release:
+	@echo "Testing release workflow..."
+	act workflow_dispatch -W .github/workflows/release.yaml --container-architecture linux/amd64 --secret-file .secrets
+
 actions-all: actions-ci actions-security
-	@echo "All workflows tested!"
+	@echo "Main workflows tested!"
