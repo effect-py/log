@@ -94,17 +94,17 @@ jobs:
 
     - name: Run full test suite
       run: |
-        pytest -v --cov=effect_log --cov-fail-under=75
+        poetry run pytest -v --cov=effect_log --cov-fail-under=75
 
     - name: Run security checks
       run: |
-        pip install bandit safety
-        bandit -r effect_log/
-        safety check
+        poetry add bandit safety --group dev
+        poetry run bandit -r effect_log/
+        poetry run safety check
 
     - name: Build and validate package
       run: |
-        python -m build
+        poetry build
         twine check dist/*
         
         # Test installation
@@ -184,7 +184,7 @@ jobs:
 
     - name: Build package
       run: |
-        python -m build
+        poetry build
 
     - name: Generate release notes
       id: release_notes
