@@ -5,7 +5,7 @@
 [![PyPI version](https://badge.fury.io/py/effect-log.svg)](https://badge.fury.io/py/effect-log)
 [![Python versions](https://img.shields.io/pypi/pyversions/effect-log.svg)](https://pypi.org/project/effect-log/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://github.com/effect-py/log/workflows/Tests/badge.svg)](https://github.com/effect-py/log/actions)
+[![CI](https://github.com/effect-py/log/workflows/CI/badge.svg)](https://github.com/effect-py/log/actions)
 
 Part of the [effect-py](https://github.com/effect-py) ecosystem - bringing functional programming patterns to Python.
 

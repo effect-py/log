@@ -44,7 +44,8 @@ jobs:
         virtualenvs-in-project: true
 
     - name: Install dependencies
-      run: poetry install --with dev
+      run: |
+        poetry install --with dev
         pip install build twine
 
     - name: Validate version format
