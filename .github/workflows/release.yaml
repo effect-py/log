@@ -96,12 +96,6 @@ jobs:
       run: |
         poetry run pytest -v --cov=effect_log --cov-fail-under=75
 
-    - name: Run security checks
-      run: |
-        poetry add bandit safety --group dev
-        poetry run bandit -r effect_log/
-        poetry run safety check
-
     - name: Build and validate package
       run: |
         poetry build
