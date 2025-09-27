@@ -33,5 +33,6 @@ jobs:
 
     - name: Check for security vulnerabilities
       run: |
-        poetry add pip-audit --group dev
-        poetry run pip-audit --format=json --output=audit.json || true
+        poetry add safety --group dev
+        poetry run safety scan --output json --save-as audit.json || true
+        poetry run safety scan
