@@ -21,11 +21,9 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: System :: Logging",
     "Typing :: Typed",
@@ -34,7 +32,7 @@ classifiers = [
 packages = [{ include = "effect_log" }]
 
 [tool.poetry.dependencies]
-python = ">=3.8"
+python = ">=3.11"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.0"

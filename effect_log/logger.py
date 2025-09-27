@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 from .types import LogContext, LogEntry, LogLevel
 from .writers import ConsoleWriter, Writer

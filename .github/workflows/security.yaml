@@ -149,9 +149,8 @@ jobs:
       uses: trufflesecurity/trufflehog@main
       with:
         path: ./
-        base: main
-        head: HEAD
         extra_args: --debug --only-verified
+      if: github.event_name == 'pull_request'
 
     - name: Run gitleaks secret scanner
       uses: gitleaks/gitleaks-action@v2
@@ -209,8 +208,8 @@ jobs:
     - name: Generate SBOM
       run: |
         pip install cyclonedx-bom
-        cyclonedx-py -o sbom.xml .
-        cyclonedx-py -o sbom.json . --format json
+        cyclonedx-py poetry --output-file sbom.xml --output-format xml
+        cyclonedx-py poetry --output-file sbom.json --output-format json
 
     - name: Upload SBOM
       uses: actions/upload-artifact@v4

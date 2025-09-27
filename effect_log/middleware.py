@@ -143,12 +143,14 @@ class HttpLoggerMiddleware:
                 body = body.decode("utf-8")
             except UnicodeDecodeError:
                 return "<binary data>"
+        elif not isinstance(body, str):
+            body = str(body)
 
         # Truncate if too long
         if len(body) > self.max_body_size:
             body = body[: self.max_body_size] + "..."
 
-        return body
+        return str(body)
 
     def _get_log_level_for_status(self, status_code: int) -> LogLevel:
         """Determine log level based on HTTP status code."""

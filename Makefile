@@ -1,9 +1,9 @@
-.PHONY: install lint format typecheck test coverage clean
+.PHONY: install check-lint format typecheck test coverage clean fix-lint
 
 install:
 	poetry install
 
-lint:
+check-lint:
 	poetry run ruff check .
 
 format:
@@ -17,6 +17,10 @@ test:
 
 coverage:
 	poetry run pytest --cov=effect_log --cov-report=term-missing --cov-report=html
+
+fix-lint:
+	poetry run ruff format .
+	poetry run ruff check . --fix
 
 clean:
 	rm -rf .mypy_cache .pytest_cache .ruff_cache .coverage htmlcov
