@@ -29,12 +29,11 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Install Poetry
-      uses: snok/install-poetry@v2
+      uses: snok/install-poetry@v1
       with:
         version: latest
         virtualenvs-create: true
         virtualenvs-in-project: true
-        virtualenvs-path: .venv
 
     - name: Cache Poetry dependencies
       uses: actions/cache@v4
@@ -80,12 +79,11 @@ jobs:
           ${{ runner.os }}-pip-lint-
 
     - name: Install Poetry
-      uses: snok/install-poetry@v2
+      uses: snok/install-poetry@v1
       with:
         version: latest
         virtualenvs-create: true
         virtualenvs-in-project: true
-        virtualenvs-path: .venv
 
     - name: Install dependencies
       run: poetry install --with dev
@@ -122,12 +120,11 @@ jobs:
           ${{ runner.os }}-pip-${{ matrix.python-version }}-
 
     - name: Install Poetry
-      uses: snok/install-poetry@v2
+      uses: snok/install-poetry@v1
       with:
         version: latest
         virtualenvs-create: true
         virtualenvs-in-project: true
-        virtualenvs-path: .venv
 
     - name: Install dependencies
       run: poetry install --with dev
