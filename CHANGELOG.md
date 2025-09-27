@@ -1,4 +1,9 @@
 # Changelog
+## [0.1.0] - 2025-09-27
+
+### Added
+- Release version 0.1.0
+
 
 All notable changes to this project will be documented in this file.
 

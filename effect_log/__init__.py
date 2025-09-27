@@ -26,7 +26,7 @@ from .writers import (
     Writer,
 )
 
-__version__ = "0.1.0b1"
+__version__ = "0.1.0"
 __all__ = [
     # Core classes
     "Logger",
