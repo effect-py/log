@@ -267,7 +267,7 @@ jobs:
         sleep 30
         
         # Check if package is available on PyPI
-        python -c "
+        poetry run python -c "
         import requests
         import time
         import sys
@@ -304,10 +304,10 @@ jobs:
         pip install effect-log==$VERSION
         
         # Test basic functionality
-        python -c "
+        poetry run python -c "
         import effect_log
         from effect_log import Logger, with_context, with_span
-        
+
         logger = Logger().pipe(with_context(test='release'), with_span('test-span'))
         logger.info('Release test successful', version='$VERSION')
         print(f'Successfully installed and tested version {effect_log.__version__}')
