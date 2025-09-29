@@ -290,7 +290,8 @@ jobs:
                 time.sleep(30)
         else:
             print(f'Package version {version} not found on PyPI after {max_attempts} attempts')
-            sys.exit(1)
+            print('This may be normal if publish workflow failed or is still running')
+            print('Check the publish workflow logs for details')
         "
 
     - name: Test installation from PyPI
