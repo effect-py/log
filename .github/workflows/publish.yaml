@@ -3,21 +3,17 @@ name: Publish
 on:
   release:
     types: [published]
-  workflow_dispatch:
-    inputs:
-      test_pypi:
-        description: 'Publish to Test PyPI'
-        required: false
-        default: false
-        type: boolean
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  validate:
+  publish-pypi:
     runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: write
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -33,110 +29,9 @@ jobs:
         version: latest
         virtualenvs-create: true
         virtualenvs-in-project: true
-
-    - name: Cache Poetry dependencies
-      uses: actions/cache@v4
-      with:
-        path: .venv
-        key: ${{ runner.os }}-poetry-build-${{ hashFiles('**/poetry.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-poetry-build-
-
-    - name: Install dependencies
-      run: |
-        poetry install --with dev
-        pip install twine
-
-    - name: Run tests
-      run: poetry run pytest -v
-
-    - name: Run linting
-      run: |
-        poetry run ruff format --check .
-        poetry run ruff check .
-        poetry run mypy .
-
-    - name: Validate package metadata
-      run: |
-        poetry build
-        twine check dist/*
-
-  build:
-    needs: validate
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
-
-    - name: Cache pip dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-build-${{ hashFiles('**/requirements-dev.txt', '**/pyproject.toml') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-build-
-
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
-      with:
-        version: latest
-        virtualenvs-create: true
-        virtualenvs-in-project: true
-        installer: pip
-
-    - name: Install dependencies
-      run: |
-        poetry install --with dev
-        poetry add twine --group dev
 
     - name: Build package
       run: poetry build
-
-    - name: Check package
-      run: poetry run twine check dist/*
-
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: dist
-        path: dist/
-
-  publish-test:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event.inputs.test_pypi == 'true'
-    environment: test-pypi
-    steps:
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: dist
-        path: dist/
-
-    - name: Publish to Test PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        repository-url: https://test.pypi.org/legacy/
-        user: __token__
-        password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-        verbose: true
-
-  publish-pypi:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event_name == 'release' && github.event.action == 'published'
-    environment: pypi
-    steps:
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: dist
-        path: dist/
 
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
@@ -144,24 +39,3 @@ jobs:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
         verbose: true
-
-  create-github-release:
-    needs: publish-pypi
-    runs-on: ubuntu-latest
-    if: github.event_name == 'release' && github.event.action == 'published'
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: dist
-        path: dist/
-
-    - name: Upload release assets
-      uses: softprops/action-gh-release@v2
-      with:
-        files: dist/*
-        generate_release_notes: true
-        token: ${{ secrets.GITHUB_TOKEN }}

@@ -44,9 +44,7 @@ jobs:
         virtualenvs-in-project: true
 
     - name: Install dependencies
-      run: |
-        poetry install --with dev
-        pip install build twine
+      run: poetry install --with dev
 
     - name: Validate version format
       id: version
@@ -99,8 +97,8 @@ jobs:
     - name: Build and validate package
       run: |
         poetry build
-        twine check dist/*
-        
+        poetry run twine check dist/*
+
         # Test installation
         pip install dist/*.whl
         python -c "import effect_log; print(f'Package version: {effect_log.__version__}')"
@@ -139,12 +137,6 @@ jobs:
         version: latest
         virtualenvs-create: true
         virtualenvs-in-project: true
-        installer: pip
-
-    - name: Install dependencies
-      run: |
-        poetry install --with dev
-        pip install twine
 
     - name: Update CHANGELOG.md
       run: |
