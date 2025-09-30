@@ -1,4 +1,9 @@
 # Changelog
+## [0.1.7] - 2025-09-30
+
+### Added
+- Release version 0.1.7
+
 ## [0.1.6] - 2025-09-30
 
 ### Added
